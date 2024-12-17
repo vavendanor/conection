@@ -1,0 +1,123 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content-crearCli %}
+    <div class="main-content">
+
+        <!-- Formulario de búsqueda -->
+        <h2>Buscar Vehículo</h2>
+        <form>
+        <div class="form-group">
+            <label for="patente">Ingrese la patente</label>
+            <input type="text" class="form-control" id="patente" name="patente" 
+            placeholder="Ejemplo: AB1234 o BB22AA" required>
+            <small id="errorPatente" class="text-danger"></small>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="buscarBtn" disabled>Buscar</button>
+        </form>
+
+        <!-- Resultados de la búsqueda -->
+        <h1>Resultados de la búsqueda</h1>
+        {% if ordenes %}
+        <div id="tabla-resultados">
+            <table class="table table-striped" id="my-table">
+                <thead>
+                    <tr>
+                        <th>Patente</th>
+                        <th>Modelo</th>
+                        <th>Marca</th>
+                        <th>Dueño</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for orden in ordenes %}
+                    <tr>
+                        <td>{{ orden.patente }}</td>
+                        <td>{{ orden.modelo }}</td>
+                        <td>{{ orden.marca }}</td>
+                        <td>{{ orden.cliente.nombres }}</td>
+                        <td>
+                            <a href="{% url 'editarVehiculo' orden.id %}" class="btn btn-sm btn-warning">Editar</a>
+                            <a href="{% url 'deleteVC' orden.id %}" class="btn btn-sm btn-danger" onclick="return confirmarEliminacion()">Eliminar</a>
+                        </td>
+                    </tr> 
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>No se encontraron vehículos con el estado 'Terminado'.</p>
+        {% endif %}
+
+        <!-- Paginación -->
+        <div class="pagination">
+            <ul class="pagination justify-content-center">
+                {% if ordenes.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1">Primera</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ ordenes.previous_page_number }}">Anterior</a>
+                </li>
+                {% endif %}
+
+                <li class="page-item disabled">
+                    <a class="page-link">Página {{ ordenes.number }} de {{ ordenes.paginator.num_pages }}</a>
+                </li>
+
+                {% if ordenes.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ ordenes.next_page_number }}">Siguiente</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ ordenes.paginator.num_pages }}">Última</a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+
+    </div>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const patenteInput = document.querySelector("#patente");
+        const errorPatente = document.querySelector("#errorPatente");
+        const buscarBtn = document.querySelector("#buscarBtn");
+
+        // Validar formato de patente
+        function validarPatente() {
+            const value = patenteInput.value.trim();
+            const regexAntiguo = /^[A-Z]{2}[0-9]{4}$/; // Ejemplo: AB1234
+            const regexNuevo = /^[A-Z]{2}[0-9]{2}[A-Z]{2}$/; // Ejemplo: BB22AA
+
+            if (!regexAntiguo.test(value) && !regexNuevo.test(value)) {
+                errorPatente.textContent = "La patente debe ser AB1234 o BB22AA.";
+                return false;
+            }
+
+            errorPatente.textContent = ""; // Limpia el error si el formato es válido
+            return true;
+        }
+
+        // Validar el formulario y habilitar/deshabilitar el botón Buscar
+        function validarFormulario() {
+            const esValido = validarPatente();
+            buscarBtn.disabled = !esValido; // Habilita el botón solo si la patente es válida
+        }
+
+        // Evento de validación en tiempo real
+        patenteInput.addEventListener("input", function () {
+            validarFormulario();
+        });
+
+        // Inicialización de la validación
+        validarFormulario();
+
+        // Confirmar eliminación
+        window.confirmarEliminacion = function () {
+            return confirm("¿Estás seguro de que deseas eliminar este vehículo?");
+        };
+    });
+    </script>
+{% endblock %}

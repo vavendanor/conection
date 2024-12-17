@@ -1,0 +1,182 @@
+{% extends 'jefe/base.html' %}
+{% load static %}
+
+{% block content-jefe %}
+<div class="main-content">
+    <h1>Editar Usuario</h1>
+
+    {% if messages %}
+    <div class="mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}" role="alert">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="POST" id="editarUsuarioForm">
+        {% csrf_token %}
+        <!-- Campo para Nombre -->
+        <div class="form-group">
+            <label for="first_name">Nombre:</label>
+            <input type="text" id="first_name" name="first_name" class="form-control" value="{{ user.first_name }}" required>
+            <div id="firstNameError" class="text-danger"></div>
+        </div>
+
+        <!-- Campo para Apellido -->
+        <div class="form-group">
+            <label for="last_name">Apellido:</label>
+            <input type="text" id="last_name" name="last_name" class="form-control" value="{{ user.last_name }}" required>
+            <div id="lastNameError" class="text-danger"></div>
+        </div>
+
+        <!-- Campo para Nombre de Usuario -->
+        <div class="form-group">
+            <label for="username">Nombre de Usuario:</label>
+            <input type="text" id="username" name="username" class="form-control" value="{{ user.username }}" required>
+            <div id="usernameError" class="text-danger"></div>
+        </div>
+
+        <!-- Campo para Correo Electrónico -->
+        <div class="form-group">
+            <label for="email">Correo Electrónico:</label>
+            <input type="email" id="email" name="email" class="form-control" value="{{ user.email }}" required>
+            <div id="emailError" class="text-danger"></div>
+        </div>
+
+        <!-- Campo para Nueva Contraseña -->
+        <div class="form-group">
+            <label for="password">Nueva Contraseña:</label>
+            <input type="password" id="password" name="password" class="form-control" placeholder="Dejar en blanco si no desea cambiar la contraseña">
+            <div id="passwordError" class="text-danger"></div>
+        </div>
+
+        <!-- Campo para Grupo -->
+        <div class="form-group">
+            <label for="grupo">Rol (Grupo):</label>
+            <select id="grupo" name="grupo" class="form-control">
+                <option value="">Seleccione un rol</option>
+                {% for grupo in grupos %}
+                <option value="{{ grupo.id }}" {% if grupo in user.groups.all %}selected{% endif %}>{{ grupo.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="is_active">Estado:</label>
+            <select id="is_active" name="is_active" class="form-control">
+                <option value="1" {% if user.is_active %}selected{% endif %}>Activo</option>
+                <option value="0" {% if not user.is_active %}selected{% endif %}>Inactivo</option>
+            </select>
+        </div>
+
+        <!-- Botón Guardar Cambios -->
+        <button type="submit" id="submitBtn" class="btn btn-primary">Guardar Cambios</button>
+
+        <!-- Botón Cancelar -->
+        <br>
+        <a style="margin-top: 20px;" href="{% url 'gestionar_usuarios' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const MAX_RUT_LENGTH = 10;
+        const MAX_NAME_LENGTH = 12;
+        const MIN_NAME_LENGTH = 3;
+    
+        // Referencias a los campos
+        const firstNameInput = document.querySelector('#first_name');
+        const lastNameInput = document.querySelector('#last_name');
+        const usernameInput = document.querySelector('#username');
+        const emailInput = document.querySelector('#email');
+        const passwordInput = document.querySelector('#password');
+        const submitBtn = document.querySelector('#submitBtn');
+    
+        // Referencias a los mensajes de error
+        const firstNameError = document.querySelector('#firstNameError');
+        const lastNameError = document.querySelector('#lastNameError');
+        const usernameError = document.querySelector('#usernameError');
+        const emailError = document.querySelector('#emailError');
+        const passwordError = document.querySelector('#passwordError');
+    
+        // Limitar la longitud de entrada
+        function limitarLongitud(input, maxLength) {
+            if (input.value.length > maxLength) {
+                input.value = input.value.slice(0, maxLength);
+            }
+        }
+    
+        // Validación de nombres y apellidos
+        function validarNombre(nombre) {
+            const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,12}$/;
+            return regex.test(nombre);
+        }
+    
+        // Validación de RUT (Formato y dígito verificador)
+        function validarRUT(rut) {
+            if (rut.length !== MAX_RUT_LENGTH) return false;
+            const regex = /^\d{7,8}-[0-9kK]$/;
+            if (!regex.test(rut)) return false;
+    
+            const [numeros, dvIngresado] = rut.split('-');
+            const reverso = numeros.split('').reverse().map(Number);
+            const factores = [2, 3, 4, 5, 6, 7];
+            const suma = reverso.reduce((acc, num, idx) => acc + num * factores[idx % 6], 0);
+            const dvCalculado = 11 - (suma % 11);
+            const dv = dvCalculado === 11 ? '0' : dvCalculado === 10 ? 'k' : dvCalculado.toString();
+            return dv.toLowerCase() === dvIngresado.toLowerCase();
+        }
+    
+        // Validación de correo electrónico
+        function validarEmail(email) {
+            const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return regex.test(email);
+        }
+    
+        // Validación de contraseña
+        function validarPassword(password) {
+            const regex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+            return regex.test(password);
+        }
+    
+        // Eventos de validación en tiempo real
+        firstNameInput.addEventListener('input', function() {
+            limitarLongitud(firstNameInput, MAX_NAME_LENGTH);
+            firstNameError.textContent = validarNombre(firstNameInput.value.trim()) ? '' : 'El nombre debe tener entre 3 y 12 caracteres y solo contener letras.';
+        });
+    
+        lastNameInput.addEventListener('input', function() {
+            limitarLongitud(lastNameInput, MAX_NAME_LENGTH);
+            lastNameError.textContent = validarNombre(lastNameInput.value.trim()) ? '' : 'El apellido debe tener entre 3 y 12 caracteres y solo contener letras.';
+        });
+    
+        usernameInput.addEventListener('input', function() {
+            limitarLongitud(usernameInput, MAX_RUT_LENGTH);
+            const rut = usernameInput.value.trim();
+            if (rut.length !== MAX_RUT_LENGTH) {
+                usernameError.textContent = 'El RUT debe tener exactamente 10 caracteres.';
+            } else if (!validarRUT(rut)) {
+                usernameError.textContent = 'El RUT ingresado no es válido.';
+            } else {
+                usernameError.textContent = '';
+            }
+        });
+    
+        emailInput.addEventListener('input', function() {
+            emailError.textContent = validarEmail(emailInput.value.trim()) ? '' : 'El correo electrónico no tiene un formato válido.';
+        });
+    
+        passwordInput.addEventListener('input', function() {
+            const password = passwordInput.value.trim();
+            if (password && !validarPassword(password)) {
+                passwordError.textContent = 'La contraseña debe tener al menos 8 caracteres, incluyendo una letra y un número.';
+            } else {
+                passwordError.textContent = '';
+            }
+        });
+    });
+    </script>
+    
+{% endblock content-jefe %}

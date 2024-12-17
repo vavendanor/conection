@@ -1,0 +1,194 @@
+
+<style>
+    /* Estilos generales */
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f9;
+        margin-top: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    h2 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 20px;
+    }
+
+    .principal-content {
+        background: #ffffff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 400px;
+        
+    }
+
+    form {
+        display: flex;
+        flex-direction: column;
+    }
+
+    form p {
+        margin-bottom: 15px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #555;
+    }
+
+    input, select {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+    }
+
+    button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    button:hover {
+        background: #0056b3;
+    }
+
+    a {
+        text-align: center;
+        display: block;
+        margin-top: 10px;
+        color: #007bff;
+        text-decoration: none;
+    }
+
+    a:hover {
+        text-decoration: underline;
+    }
+
+    textarea {
+        width: 100%;
+        max-width: 100%;
+        padding: 10px;
+        font-size: 14px;
+        color: #333;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        resize: vertical; /* Permite cambiar solo el tamaño vertical */
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    textarea:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+        outline: none;
+    }
+
+    /* Optional: Placeholder Style */
+    textarea::placeholder {
+        color: #aaa;
+        font-style: italic;
+    }
+</style>
+
+
+<div class="principal-content">
+    <form method="post">
+        <h2>Editar Reparación</h2>
+        {% csrf_token %}
+        {% for field in form %}
+            <div class="form-group">
+                {{ field.label_tag }}
+                {{ field }}
+                <div id="{{ field.name }}Error" class="text-danger"></div>
+            </div>
+        {% endfor %}
+        <button type="submit" id="submitBtn" disabled>Guardar Cambios</button>
+        <a href="{% url 'gestionarReparaciones' %}">Cancelar</a> <!-- Enlace para cancelar y volver a la lista -->
+    </form>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const inputs = {
+            nombre: document.querySelector('#id_nombre'),
+            precio: document.querySelector('#id_precio'),
+            descripcion: document.querySelector('#id_descripcion'),
+        };
+
+        const errors = {
+            nombre: document.querySelector('#nombreError'),
+            precio: document.querySelector('#precioError'),
+            descripcion: document.querySelector('#descripcionError'),
+        };
+
+        const submitBtn = document.querySelector('#submitBtn');
+
+        // Validación de los campos
+        function validarNombre(nombre) {
+            const regex = /^[a-zA-Z0-9\s]+$/;  // Permite letras, números y espacios
+            return regex.test(nombre);
+        }
+
+        function validarPrecio(precio) {
+            return !isNaN(precio) && precio > 0;  // Precio debe ser un número mayor que 0
+        }
+
+        function validarDescripcion(descripcion) {
+            return descripcion.length >= 10;  // La descripción debe tener al menos 10 caracteres
+        }
+
+        // Validación general
+        function validarFormulario() {
+            let isValid = true;
+
+            // Validación para nombre
+            if (!validarNombre(inputs.nombre.value.trim())) {
+                errors.nombre.textContent = "El nombre solo puede contener letras, números y espacios.";
+                isValid = false;
+            } else {
+                errors.nombre.textContent = '';
+            }
+
+            // Validación para precio
+            if (!validarPrecio(inputs.precio.value.trim())) {
+                errors.precio.textContent = "El precio debe ser un número mayor que 0.";
+                isValid = false;
+            } else {
+                errors.precio.textContent = '';
+            }
+
+            // Validación para descripción
+            if (!validarDescripcion(inputs.descripcion.value.trim())) {
+                errors.descripcion.textContent = "La descripción debe tener al menos 10 caracteres.";
+                isValid = false;
+            } else {
+                errors.descripcion.textContent = '';
+            }
+
+            submitBtn.disabled = !isValid;
+        }
+
+        // Agregar eventos de validación
+        Object.keys(inputs).forEach(key => {
+            inputs[key].addEventListener('input', validarFormulario);
+        });
+
+        // Validación inicial
+        validarFormulario();
+    });
+</script>

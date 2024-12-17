@@ -1,0 +1,209 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content-crearCli %}
+<div class="main-content">
+
+    <!-- Formulario de búsqueda -->
+    <h2>Crear orden de trabajo</h2>
+    <form action="{% url 'crearOT' %}" method="POST">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="patente">Ingrese la patente</label>
+        <input type="text" class="form-control" id="patente" name="patente" maxlength="10" placeholder="Ej: ABCD12" required>
+        <small id="patenteError" class="text-danger"></small>
+    </div>
+  
+    <div class="form-group">
+        <label for="date">Fecha de inicio</label>
+        <input type="date" class="form-control" id="date" name="date" required>
+    </div>
+
+  
+    <div class="form-group">
+        <label for="dateEnd">Fecha de entrega</label>
+        <input type="date" class="form-control" id="dateEnd" name="dateEnd" required>
+    </div>
+
+  
+    <div class="form-group">
+        <label for="rutMecanico">Rut del Mecánico</label>
+        <input type="text" class="form-control" id="rutMecanico" name="rutMecanico" maxlength="10" placeholder="Ej: 12345678-9" required>
+        <small id="rutMecanicoError" class="text-danger"></small>
+    </div>
+  
+    <div class="form-group">
+        <label for="rut_cliente">Rut del Cliente</label>
+        <input type="text" class="form-control" id="rut_cliente" name="rut_cliente" maxlength="10" placeholder="Ej: 12345678-9" required>
+        <small id="rutClienteError" class="text-danger"></small>
+    </div>
+
+  
+      <div class="form-group">
+        <label for="reparaciones">Seleccionar Reparaciones</label>
+        <select id="reparaciones" name="reparaciones" class="form-control">
+            {% for reparacion in reparaciones %}
+                <option value="{{ reparacion.id }}">{{ reparacion.nombre }} - ${{ reparacion.precio|floatformat:0 }}</option>
+            {% endfor %}
+        </select>
+        <button type="button" id="add-reparacion" class="btn btn-secondary mt-2">Agregar Reparación</button>
+    </div>
+    <div id="selected-reparaciones" class="mt-3">
+        <h4>Reparaciones Seleccionadas:</h4>
+        <ul id="reparaciones-list">
+            <!-- Aquí se mostrarán las reparaciones seleccionadas -->
+        </ul>
+    </div>    
+  
+    <div class="form-group">
+        <label for="descripcion">Descripción</label>
+        <textarea id="descripcion" name="descripcion" rows="4" cols="50" class="form-control"></textarea>
+        <small id="descripcionError" class="text-danger"></small>
+    </div>
+  
+    <button type="submit" class="btn btn-primary" id="submitBtn" disabled>Crear</button>
+</form>
+  </form>
+  
+    
+
+  
+</div>
+
+
+<script>
+    const addReparacionBtn = document.getElementById('add-reparacion');
+    const reparacionesDropdown = document.getElementById('reparaciones');
+    const reparacionesList = document.getElementById('reparaciones-list');
+
+    // Almacena las reparaciones seleccionadas
+    const selectedReparaciones = new Set();
+
+    addReparacionBtn.addEventListener('click', () => {
+        const selectedOption = reparacionesDropdown.options[reparacionesDropdown.selectedIndex];
+
+        if (selectedOption && !selectedReparaciones.has(selectedOption.value)) {
+            // Agregar reparación a la lista acumulativa
+            selectedReparaciones.add(selectedOption.value);
+
+            const li = document.createElement('li');
+            li.textContent = selectedOption.text;
+            li.setAttribute('data-id', selectedOption.value);
+
+            // Botón para eliminar reparación
+            const removeButton = document.createElement('button');
+            removeButton.textContent = 'Eliminar';
+            removeButton.classList.add('btn', 'btn-danger', 'btn-sm', 'ml-2');
+
+            removeButton.addEventListener('click', () => {
+                selectedReparaciones.delete(selectedOption.value); // Elimina del Set
+                reparacionesList.removeChild(li); // Elimina del DOM
+            });
+
+            li.appendChild(removeButton); // Agrega el botón al <li>
+            reparacionesList.appendChild(li); // Agrega el <li> a la lista
+        } else {
+            alert('Esta reparación ya fue seleccionada.');
+        }
+    });
+
+    // Enviar los datos acumulados con el formulario
+    const form = document.querySelector('form');
+    form.addEventListener('submit', (event) => {
+        // Crear un input oculto para enviar las reparaciones seleccionadas
+        const hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'reparaciones';
+        hiddenInput.value = Array.from(selectedReparaciones).join(','); // Convierte el Set en una lista separada por comas
+        form.appendChild(hiddenInput);
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const patenteInput = document.getElementById("patente");
+        const rutMecanicoInput = document.getElementById("rutMecanico");
+        const rutClienteInput = document.getElementById("rut_cliente");
+        const descripcionInput = document.getElementById("descripcion");
+        const submitBtn = document.getElementById("submitBtn");
+
+        const patenteError = document.getElementById("patenteError");
+        const rutMecanicoError = document.getElementById("rutMecanicoError");
+        const rutClienteError = document.getElementById("rutClienteError");
+        const descripcionError = document.getElementById("descripcionError");
+
+        // Validar patente chilena
+        function validarPatente(patente) {
+            const regex = /^[A-Z0-9]{6}$/; // Letras mayúsculas y números, exactamente 6 caracteres
+            return regex.test(patente);
+        }
+
+        // Validar descripción
+        function validarDescripcion(descripcion) {
+            const regex = /^[a-zA-Z0-9\s.,-]+$/; // Letras, números, espacios, y .,-
+            return regex.test(descripcion);
+        }
+
+        // Validar RUT (Formato, longitud y dígito verificador)
+        function validarRUT(rut) {
+            if (rut.length !== 10) return false; // Validar longitud
+            const regex = /^\d{7,8}-[0-9kK]$/;
+            if (!regex.test(rut)) return false;
+
+            const [numeros, dvIngresado] = rut.split("-");
+            const reverso = numeros.split("").reverse().map(Number);
+            const factores = [2, 3, 4, 5, 6, 7];
+            const suma = reverso.reduce((acc, num, idx) => acc + num * factores[idx % 6], 0);
+            const dvCalculado = 11 - (suma % 11);
+            const dv = dvCalculado === 11 ? "0" : dvCalculado === 10 ? "k" : dvCalculado.toString();
+            return dv.toLowerCase() === dvIngresado.toLowerCase();
+        }
+
+        // Validación en tiempo real
+        patenteInput.addEventListener("input", () => {
+            const patente = patenteInput.value.trim();
+            if (!validarPatente(patente)) {
+                patenteError.textContent = "La patente debe contener solo letras mayúsculas y números (6 caracteres).";
+            } else {
+                patenteError.textContent = "";
+            }
+            habilitarSubmit();
+        });
+
+        rutMecanicoInput.addEventListener("input", () => {
+            const rut = rutMecanicoInput.value.trim();
+            if (!validarRUT(rut)) {
+                rutMecanicoError.textContent = "El RUT del mecánico debe tener 10 caracteres y ser válido.";
+            } else {
+                rutMecanicoError.textContent = "";
+            }
+            habilitarSubmit();
+        });
+
+        rutClienteInput.addEventListener("input", () => {
+            const rut = rutClienteInput.value.trim();
+            if (!validarRUT(rut)) {
+                rutClienteError.textContent = "El RUT del cliente debe tener 10 caracteres y ser válido.";
+            } else {
+                rutClienteError.textContent = "";
+            }
+            habilitarSubmit();
+        });
+
+        descripcionInput.addEventListener("input", () => {
+            const descripcion = descripcionInput.value.trim();
+            if (!validarDescripcion(descripcion)) {
+                descripcionError.textContent = "La descripción solo puede contener letras, números, espacios, y ., -";
+            } else {
+                descripcionError.textContent = "";
+            }
+            habilitarSubmit();
+        });
+
+        // Habilitar/deshabilitar el botón de envío
+        function habilitarSubmit() {
+            submitBtn.disabled = !!(patenteError.textContent || rutMecanicoError.textContent || rutClienteError.textContent || descripcionError.textContent);
+        }
+    });
+</script>
+
+
+{% endblock content-crearCli %}

@@ -1,0 +1,131 @@
+{% extends 'mecanico/base.html' %}
+
+{% load static %}
+
+{% block content-mecanico %}
+<style>
+    .hover-link {
+        color: rgb(255, 255, 255);
+        text-decoration: none;
+        font-size: 16px;
+        background-color: #5078fc;
+        width:300px;
+        transition: color 0.3s ease, font-size 0.3s ease; /* Efecto suave */
+    }
+  
+    .hover-link:hover {
+        background-color: #338f36; /* Cambia el color al pasar el cursor */
+  
+    }
+</style>
+
+<div class="main-content mt-4">
+    <h2>Detalle de la Orden de Trabajo</h2>
+
+    <form method="POST" class="mb-4" action="{% url 'otmecanico' ot_id=ot.id %}">
+        {% csrf_token %}
+        
+        <!-- Alineación horizontal de los campos principales -->
+        <div class="form-row align-items-end">
+            <div class="form-group col-md-3 col-12">
+                <label for="ot_id">ID OT:</label>
+                <input type="text" class="form-control" id="ot_id" value="{{ ot.id }}" readonly>
+            </div>
+            <div class="form-group col-md-3 col-12">
+                <label for="patente">Patente:</label>
+                <input type="text" class="form-control" id="patente" value="{{ ot.vehiculo.patente }}" readonly>
+            </div>
+            <div class="form-group col-md-3 col-12">
+                <label for="fecha_inicio">Fecha de Inicio:</label>
+                <input type="date" class="form-control" id="fecha_inicio" value="{{ ot.fecha_inicio|date:'Y-m-d' }}" readonly>
+            </div>
+            <div class="form-group col-md-3 col-12">
+                <label for="fecha_entrega">Fecha de Entrega:</label>
+                <input type="date" class="form-control" id="fecha_entrega" value="{{ ot.fecha_entrega|date:'Y-m-d' }}" readonly>
+            </div>
+        </div>
+
+        <!-- Observaciones -->
+        <div class="form-group">
+            <label for="observacion">Observaciones:</label>
+            <textarea class="form-control" id="observacion" name="observacion" rows="3">{{ ot.observacion }}</textarea>
+        </div>
+
+        <!-- Reparaciones con checkboxes -->
+        <div class="form-group">
+            <label for="reparaciones">Reparaciones:</label>
+            <div id="reparaciones">
+                {% for reparacion in reparaciones %}
+                <div class="form-check">
+                    <input type="hidden" 
+                           name="reparacion_hidden_{{ reparacion.id }}" 
+                           value="{{ reparacion.estado|yesno:'true,false' }}">
+                    <input class="form-check-input reparacion-checkbox" 
+                           type="checkbox" 
+                           name="reparacion_{{ reparacion.id }}" 
+                           value="true"
+                           {% if reparacion.estado %}checked{% endif %}
+                           {% if ot.estado != 'En Proceso' %}disabled{% endif %}
+                           id="reparacion_{{ reparacion.id }}">
+                    <label class="form-check-label" for="reparacion_{{ reparacion.id }}">
+                        {{ reparacion.nombre }} - ${{ reparacion.precio }}
+                    </label>
+                </div>
+                {% empty %}
+                <p>No hay reparaciones asignadas a esta orden de trabajo.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Estado de la orden -->
+        <div class="form-group">
+            <label for="estado">Estado de la Orden:</label>
+            <select class="form-control" id="estado" name="estado" onchange="updateCheckboxes()">
+                <option value="Pendiente" {% if ot.estado == 'Pendiente' %}selected{% endif %}>Pendiente</option>
+                <option value="En Proceso" {% if ot.estado == 'En Proceso' %}selected{% endif %}>En Proceso</option>
+                <option value="Terminado" {% if ot.estado == 'Terminado' %}selected{% endif %}>Terminado</option>
+            </select>
+        </div>
+  
+        <!-- Botones de acción -->
+        <div class="form-group col-md-3 col-12 d-flex">
+            <button type="submit" class="btn btn-primary btn-block w-100 mr-5">Guardar Cambios</button>
+            <a href="{% url 'mecanico' %}" class=" hover-link btn btn-primary btn-block mr-2" style=" margin-top: 0;">Volver</a>
+        </div>
+    </form>
+    <!-- Mostrar mensajes -->
+    {% if messages %}
+        <div class="messages mt-4">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    function updateCheckboxes() {
+        const estado = document.getElementById('estado').value;
+        const checkboxes = document.querySelectorAll('.reparacion-checkbox');
+
+        checkboxes.forEach(checkbox => {
+            checkbox.disabled = estado !== 'En Proceso';
+            
+            // Asegurarse de que el campo oculto refleje el estado actual del checkbox
+            const hiddenInput = checkbox.previousElementSibling;
+            hiddenInput.value = checkbox.checked;
+        });
+    }
+
+    // Manejar cambios en los checkboxes
+    document.querySelectorAll('.reparacion-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const hiddenInput = this.previousElementSibling;
+            hiddenInput.value = this.checked;
+        });
+    });
+</script>
+{% endblock %}

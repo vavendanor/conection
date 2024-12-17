@@ -1,0 +1,100 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content-crearCli %}
+
+<div class="main-content">
+
+    <h2>Crear Reparaciones</h2>
+    <form action="{% url 'crearReparaciones' %}" method="POST">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            <label for="nombre">Nombre:</label>
+            <input type="text" class="form-control" id="nombre" name="nombre" placeholder="Ingrese el nombre de la reparación">
+            <small id="errorNombre" class="text-danger"></small>
+        </div>
+        
+        <div class="form-group">
+            <label for="precio">Valor:</label>
+            <input type="text" class="form-control" id="precio" name="precio" placeholder="Ingrese el valor sin decimales">
+            <small id="errorPrecio" class="text-danger"></small>
+        </div>
+        
+        <div class="form-group">
+            <label for="descripcion">Descripción:</label>
+            <input type="text" class="form-control" id="descripcion" name="descripcion" placeholder="Describa la reparación">
+            <small id="errorDescripcion" class="text-danger"></small>
+        </div>
+        
+        <button type="submit" class="btn btn-primary" id="submitBtn" disabled>Enviar</button>
+    </form>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const nombreInput = document.querySelector("#nombre");
+    const precioInput = document.querySelector("#precio");
+    const descripcionInput = document.querySelector("#descripcion");
+    const submitBtn = document.querySelector("#submitBtn");
+
+    const errorNombre = document.querySelector("#errorNombre");
+    const errorPrecio = document.querySelector("#errorPrecio");
+    const errorDescripcion = document.querySelector("#errorDescripcion");
+
+    // Validar el nombre
+    function validarNombre() {
+        const value = nombreInput.value.trim();
+        const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{5,}$/;
+        if (!regex.test(value)) {
+            errorNombre.textContent = "El nombre debe tener al menos 5 caracteres y solo puede contener letras.";
+            return false;
+        }
+        errorNombre.textContent = "";
+        return true;
+    }
+
+    // Validar el valor (precio)
+    function validarPrecio() {
+        const value = precioInput.value.trim();
+        const regex = /^\d+$/; // Solo números enteros
+        if (!regex.test(value)) {
+            errorPrecio.textContent = "El valor debe ser un número entero sin decimales.";
+            return false;
+        }
+        errorPrecio.textContent = "";
+        return true;
+    }
+
+    // Validar la descripción
+    function validarDescripcion() {
+        const value = descripcionInput.value.trim();
+        const regex = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s,.\-]+$/;
+        if (!regex.test(value)) {
+            errorDescripcion.textContent = "La descripción solo puede contener letras, números, y los caracteres , . -";
+            return false;
+        }
+        errorDescripcion.textContent = "";
+        return true;
+    }
+
+    // Validar formulario completo
+    function validarFormulario() {
+        const esNombreValido = validarNombre();
+        const esPrecioValido = validarPrecio();
+        const esDescripcionValida = validarDescripcion();
+        submitBtn.disabled = !(esNombreValido && esPrecioValido && esDescripcionValida);
+    }
+
+    // Eventos en tiempo real
+    nombreInput.addEventListener("input", validarFormulario);
+    precioInput.addEventListener("input", validarFormulario);
+    descripcionInput.addEventListener("input", validarFormulario);
+
+    // Inicializar la validación al cargar
+    validarFormulario();
+});
+</script>
+
+{% endblock %}

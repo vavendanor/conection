@@ -1,0 +1,139 @@
+{% extends 'mecanico/base.html' %}
+{% load static %}
+
+
+{% block content-mecanico %}
+
+
+<style>
+  .hover-link {
+      color: rgb(255, 255, 255);
+      text-decoration: none;
+      font-size: 16px;
+     background-color: #5078fc;
+      transition: color 0.3s ease, font-size 0.3s ease; /* Efecto suave */
+  }
+
+  .hover-link:hover {
+      background-color: #338f36; /* Cambia el color al pasar el cursor */
+
+  }
+</style>
+
+    <!-- Contenido principal -->
+    <div class="main-content">
+        <h1>Órdenes de Trabajo</h1>
+  
+        <br>
+         
+        <!-- Formulario de Filtros -->
+        <form method="get" class="mb-4">
+            <div class="form-row align-items-end">
+                <div class="form-group col-md-3 col-12">
+                    <label for="rut">Rut Mecánico:</label>
+                    <input type="text" class="form-control" id="rut" name="rut" value="{{ rut }}" maxlength="10">
+                </div>
+                <div class="form-group col-md-3 col-12">
+                    <label for="patente">Patente:</label>
+                    <input type="text" class="form-control" id="patente" name="patente" value="{{ patente }}" maxlength="6">
+                </div>
+                <div class="form-group col-md-3 col-12">
+                    <label for="fecha_inicio">Fecha Inicio</label>
+                    <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ fecha_inicio }}">
+                </div>
+                <div class="form-group col-md-3 col-12">
+                    <label for="fecha_termino">Fecha Termino</label>
+                    <input type="date" class="form-control" id="fecha_termino" name="fecha_termino" value="{{ fecha_termino }}">
+                </div>
+                
+                <div class="form-group col-md-3 col-12 d-flex">
+                    <button type="submit" class="btn btn-primary btn-block mr-2">Filtrar</button>
+                    <a href="{% url 'mecanico' %}" 
+                        class=" hover-link btn btn-primary btn-block mr-2" 
+                        style=" margin-top: 0;"
+                       >
+                        Limpiar</a>
+
+
+
+
+
+                   
+                </div>
+            </div>
+        </form>
+
+        <!-- Mensajes de error o advertencias -->
+  
+        <!-- Tabla de órdenes de trabajo -->
+        {% if ordenes %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Patente</th>
+                    <th>Estado</th>
+                    <th>Fecha Inicio</th>
+                    <th>Fecha Entrega</th>
+                    <th>Rut Mecánico</th>
+                    <th>Mecanico</th>
+
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in ordenes %}
+                <tr>
+                    <td>{{ i.id }}</td>
+                    <td><a href="{% url 'otmecanico' i.id %}">{{ i.vehiculo.patente }}</a></td>
+                    <td>{{ i.estado }}</td>
+                    <td>{{ i.fecha_inicio }}</td>
+                    <td>{{ i.fecha_entrega|default:"No especificada" }}</td>
+                    <td>{{ i.usuario.username }}</td>
+                    <td>{{ i.usuario.first_name }} {{ i.usuario.last_name }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    
+        <!-- Paginación -->
+        <div class="pagination">
+            <ul class="pagination justify-content-center">
+                {% if ordenes.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1" aria-label="Primera">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ ordenes.previous_page_number }}" aria-label="Anterior">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+    
+                <li class="page-item disabled">
+                    <a class="page-link">Página {{ ordenes.number }} de {{ ordenes.paginator.num_pages }}</a>
+                </li>
+    
+                {% if ordenes.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ ordenes.next_page_number }}" aria-label="Siguiente">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ ordenes.paginator.num_pages }}" aria-label="Última">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+        {% elif rut or patente or fecha_inicio or fecha_termino %}
+            <p>No se encontraron órdenes de trabajo con los filtros seleccionados.</p>
+        {% endif %}
+
+        <br>
+    </div>
+
+{% endblock %}

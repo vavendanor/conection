@@ -1,0 +1,141 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content-crearCli %}
+<div class="main-content">
+    <h2>Buscar cliente</h2>
+    <form action="{% url 'gestionarC' %}" method="GET">
+        <div class="form-group">
+            <label for="rut_cliente">RUT del cliente:</label>
+            <input type="text" class="form-control" id="rutCliente" name="rutCliente"
+                placeholder="Ingrese su RUT. Ejemplo: 12345678-9"
+                maxlength="10"
+                pattern="\d{7,8}-[0-9kK]"
+                oninput="validarRutEnTiempoReal()">
+            <small id="rutError" class="text-danger"></small>
+        </div>
+        <button type="submit" class="btn btn-primary" id="buscarBtn">Buscar / Mostrar todos</button>
+    </form>
+
+    <h2>Lista de clientes</h2>
+    {% if resultados %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>RUT</th>
+                    <th>Nombres</th>
+                    <th>Apellidos</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cliente in resultados %}
+                <tr>
+                    <td>{{ cliente.rut }}</td>
+                    <td>{{ cliente.nombres }}</td>
+                    <td>{{ cliente.apellidos }}</td>
+                    <td>
+                        <a href="{% url 'editarCliente' cliente.id %}" class="btn btn-sm btn-warning">Editar</a>
+                        <a href="{% url 'deleteCl' cliente.id %}" class="btn btn-sm btn-danger"  onclick="return confirmarEliminacion()">Eliminar</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No se encontraron resultados.</p>
+    {% endif %}
+
+<!-- Paginación -->
+<div class="pagination">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page=1{% if rut_buscar %}&rutCliente={{ rut_buscar }}{% endif %}" aria-label="Primera">
+                &laquo;&laquo;
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if rut_buscar %}&rutCliente={{ rut_buscar }}{% endif %}" aria-label="Anterior">
+                &laquo;
+            </a>
+        </li>
+        {% endif %}
+
+        <li class="page-item disabled">
+            <a class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</a>
+        </li>
+
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if rut_buscar %}&rutCliente={{ rut_buscar }}{% endif %}" aria-label="Siguiente">
+                &raquo;
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if rut_buscar %}&rutCliente={{ rut_buscar }}{% endif %}" aria-label="Última">
+                &raquo;&raquo;
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</div>
+
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const rutInput = document.getElementById("rutCliente");
+    const rutError = document.getElementById("rutError");
+    const buscarBtn = document.getElementById("buscarBtn");
+
+    // Validación en tiempo real del RUT
+    async function validarRutEnTiempoReal() {
+        const rut = rutInput.value.trim();
+
+        // Validar longitud
+        if (rut.length < 9 || rut.length > 10) {
+            rutError.textContent = "El RUT debe tener entre 9 y 10 caracteres.";
+            buscarBtn.disabled = true;
+            return;
+        }
+
+        // Validar formato básico con regex
+        const rutRegex = /^\d{7,8}-[0-9kK]$/;
+        if (!rutRegex.test(rut)) {
+            rutError.textContent = "El formato del RUT es inválido. Ejemplo: 12345678-9.";
+            buscarBtn.disabled = true;
+            return;
+        }
+
+        // Validar existencia en la base de datos
+        try {
+            const response = await fetch(`/validar-rut/?rut=${rut}`);
+            const data = await response.json();
+
+            if (!data.existe) {
+                rutError.textContent = "El RUT no existe en la base de datos.";
+                buscarBtn.disabled = true;
+            } else {
+                rutError.textContent = ""; // Limpia el mensaje si todo está bien
+                buscarBtn.disabled = false; // Habilitar el botón si es válido
+            }
+        } catch (error) {
+            console.error("Error al validar el RUT:", error);
+            rutError.textContent = "Error al validar el RUT.";
+            buscarBtn.disabled = true;
+        }
+    }
+
+    rutInput.addEventListener("input", validarRutEnTiempoReal);
+});
+
+
+
+    function confirmarEliminacion() {
+        return confirm("¿Estás seguro de que deseas eliminar este cliente?");
+    }
+
+</script>
+{% endblock content-crearCli %}

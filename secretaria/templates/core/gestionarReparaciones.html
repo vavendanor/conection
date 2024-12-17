@@ -1,0 +1,96 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content-crearCli %}
+    <div class="main-content">
+        <h2>Buscar Reparaciones</h2>
+        <form action="{% url 'gestionarReparaciones' %}" method="GET">
+            <div class="form-group">
+                <label for="codigo">Código de reparación:</label>
+                <input 
+                    type="text" 
+                    class="form-control" 
+                    id="codigo" 
+                    name="codigo" 
+                    placeholder="Ingrese el código de la reparación"
+                    maxlength="{{ max_digitos }}"  
+                    oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                <small id="codigoError" class="text-danger"></small>
+            </div>
+            <button type="submit" class="btn btn-primary" id="buscarBtn">Buscar</button>
+        </form>
+
+        <h2>Lista de Reparaciones</h2>
+        {% if ordenes %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombres</th>
+                    <th>Precio</th>
+                    <th>Descripción</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in ordenes %}
+                <tr>
+                    <td>{{ i.id }}</td> <!-- Mostrar el ID -->
+                    <td>{{ i.nombre }}</td>
+                    <td>{{ i.precio|floatformat:0 }}</td> <!-- Mostrar precio sin decimales -->
+                    <td>{{ i.descripcion }}</td>
+                    <td>
+                        <a href="{% url 'editarReparaciones' i.id %}" class="btn btn-sm btn-warning">Editar</a>
+                        <a href="{% url 'eliminarReparacion' i.id %}" class="btn btn-sm btn-danger" onclick="return confirmarEliminacion()">Eliminar</a>
+                        
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No se encontraron resultados.</p>
+        {% endif %}
+
+        <!-- Paginación -->
+        <div class="pagination">
+            <ul class="pagination justify-content-center">
+                {% if ordenes.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1">Primera</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ ordenes.previous_page_number }}">Anterior</a>
+                </li>
+                {% endif %}
+
+                <li class="page-item disabled">
+                    <a class="page-link">Página {{ ordenes.number }} de {{ ordenes.paginator.num_pages }}</a>
+                </li>
+
+                {% if ordenes.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ ordenes.next_page_number }}">Siguiente</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ ordenes.paginator.num_pages }}">Última</a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const codigoInput = document.querySelector("#codigo");
+        const buscarBtn = document.querySelector("#buscarBtn");
+
+        // Inicializar el botón como habilitado incluso si el campo está vacío
+        buscarBtn.disabled = false;
+
+        function confirmarEliminacion() {
+            return confirm("¿Estás seguro de que deseas eliminar esta reparación?");
+        }
+    });
+    </script>
+{% endblock %}

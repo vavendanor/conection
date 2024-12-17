@@ -1,0 +1,42 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://superlative-stardust-2e16a0.netlify.app/sideBar.css">
+    <link rel="stylesheet" href="https://superlative-stardust-2e16a0.netlify.app/style.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+
+    <title>Document</title>
+</head>
+<body>
+    <!-- Contenedor principal -->
+<div class="container-fluid ">
+
+    <!-- Barra lateral con menú -->
+    <div class="sidebar">
+
+        <!-- Imagen de perfil -->
+      <div class="profile-picture">
+        <h2 style="color: white;">FastCar</h2>
+      </div>
+      <ul class="nav flex-column">  
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'mecanico' %}">Buscar Orden</a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'salir' %}"> cerrar sesion</a>
+        </li>
+      </ul>
+    </div>
+    
+    {% block content-mecanico %}
+    {% endblock content-mecanico %}
+
+  </div>
+  <script src="{% static 'core/script.js' %}"></script>
+</body>
+</html>

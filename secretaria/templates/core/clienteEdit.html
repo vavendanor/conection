@@ -1,0 +1,212 @@
+<style>
+    /* Estilos generales */
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f9;
+        margin-top: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    h2 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 20px;
+    }
+
+    .principal-content {
+        background: #ffffff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 400px;
+        
+    }
+
+    form {
+        display: flex;
+        flex-direction: column;
+    }
+
+    form p {
+        margin-bottom: 15px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #555;
+    }
+
+    input, select {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+    }
+
+    button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    button:hover {
+        background: #0056b3;
+    }
+
+    a {
+        text-align: center;
+        display: block;
+        margin-top: 10px;
+        color: #007bff;
+        text-decoration: none;
+    }
+
+    a:hover {
+        text-decoration: underline;
+    }
+</style>
+
+
+
+<div class="principal-content">
+    <h2>Editar Cliente</h2>
+    {% if messages %}
+        <ul class="list-group">
+            {% for message in messages %}
+                <li class="list-group-item list-group-item-{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    <form method="post" >
+        {% csrf_token %}
+        {% for field in form %}
+            <div class="form-group">
+                {{ field.label_tag }}
+                {{ field }}
+                <div id="{{ field.name }}Error" class="text-danger"></div>
+            </div>
+        {% endfor %}
+        <button type="submit" id="submitBtn" disabled>Guardar Cambios</button>
+        <a href="{% url 'gestionarC' %}">Cancelar</a>
+    </form>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Inputs y contenedores de error
+        const inputs = {
+            rut: document.querySelector('#id_rut'),
+            nombres: document.querySelector('#id_nombres'),
+            apellidos: document.querySelector('#id_apellidos'),
+            telefono: document.querySelector('#id_telefono'),
+            email: document.querySelector('#id_email'),
+            direccion: document.querySelector('#id_direccion'),
+        };
+
+        const errors = {
+            rut: document.querySelector('#rutError'),
+            nombres: document.querySelector('#nombresError'),
+            apellidos: document.querySelector('#apellidosError'),
+            telefono: document.querySelector('#telefonoError'),
+            email: document.querySelector('#emailError'),
+            direccion: document.querySelector('#direccionError'),
+        };
+
+        const submitBtn = document.querySelector('#submitBtn');
+
+        // Funciones de validación
+        function validarFormatoRUT(rut) {
+            const regex = /^\d{7,8}-[0-9kK]$/;
+            return regex.test(rut);
+        }
+
+        function validarDigitoVerificador(rut) {
+            const [numeros, dv] = rut.split('-');
+            const reverso = numeros.split('').reverse().map(Number);
+            const factores = [2, 3, 4, 5, 6, 7];
+            const suma = reverso.reduce((acc, num, idx) => acc + num * factores[idx % 6], 0);
+            const dvCalculado = 11 - (suma % 11);
+            const dvEsperado = dvCalculado === 11 ? '0' : dvCalculado === 10 ? 'k' : String(dvCalculado);
+            return dv.toLowerCase() === dvEsperado.toLowerCase();
+        }
+
+        function validarNombres(texto) {
+            const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,}$/;
+            return regex.test(texto);
+        }
+
+        function validarTelefono(telefono) {
+            const regex = /^9\d{8}$/;
+            return regex.test(telefono);
+        }
+
+        function validarDireccion(direccion) {
+            return direccion.length >= 6; // Ejemplo simple
+        }
+
+        // Validación general
+        function validarFormulario() {
+            let isValid = true;
+
+            if (!validarFormatoRUT(inputs.rut.value.trim())) {
+                errors.rut.textContent = "El formato del RUT es inválido.";
+                isValid = false;
+            } else if (!validarDigitoVerificador(inputs.rut.value.trim())) {
+                errors.rut.textContent = "El dígito verificador no es válido.";
+                isValid = false;
+            } else {
+                errors.rut.textContent = '';
+            }
+
+            if (!validarNombres(inputs.nombres.value.trim())) {
+                errors.nombres.textContent = "Los nombres deben tener al menos 3 caracteres y solo letras.";
+                isValid = false;
+            } else {
+                errors.nombres.textContent = '';
+            }
+
+            if (!validarNombres(inputs.apellidos.value.trim())) {
+                errors.apellidos.textContent = "Los apellidos deben tener al menos 3 caracteres y solo letras.";
+                isValid = false;
+            } else {
+                errors.apellidos.textContent = '';
+            }
+
+            if (!validarTelefono(inputs.telefono.value.trim())) {
+                errors.telefono.textContent = "El teléfono debe tener 9 dígitos y comenzar con un 9.";
+                isValid = false;
+            } else {
+                errors.telefono.textContent = '';
+            }
+
+            if (!validarDireccion(inputs.direccion.value.trim())) {
+                errors.direccion.textContent = "La dirección debe tener al menos 6 caracteres.";
+                isValid = false;
+            } else {
+                errors.direccion.textContent = '';
+            }
+
+            submitBtn.disabled = !isValid;
+        }
+
+        // Agregar eventos de validación
+        Object.keys(inputs).forEach(key => {
+            inputs[key].addEventListener('input', validarFormulario);
+        });
+
+        // Validación inicial
+        validarFormulario();
+    });
+</script>

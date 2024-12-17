@@ -1,0 +1,207 @@
+
+<style>
+    /* Estilos generales */
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f9;
+        margin-top: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    h2 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 20px;
+    }
+
+    .principal-content {
+        background: #ffffff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 400px;
+        
+    }
+
+    form {
+        display: flex;
+        flex-direction: column;
+    }
+
+    form p {
+        margin-bottom: 15px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #555;
+    }
+
+    input, select {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+    }
+
+    button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    button:hover {
+        background: #0056b3;
+    }
+
+    a {
+        text-align: center;
+        display: block;
+        margin-top: 10px;
+        color: #007bff;
+        text-decoration: none;
+    }
+
+    a:hover {
+        text-decoration: underline;
+    }
+
+    textarea {
+        width: 100%;
+        max-width: 100%;
+        padding: 10px;
+        font-size: 14px;
+        color: #333;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        resize: vertical; /* Permite cambiar solo el tamaño vertical */
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    textarea:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+        outline: none;
+    }
+
+    /* Optional: Placeholder Style */
+    textarea::placeholder {
+        color: #aaa;
+        font-style: italic;
+    }
+</style>
+
+
+
+
+<div class="principal-content">
+    <h2>Editar OT</h2>
+    <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+            <div class="form-group">
+                {{ field.label_tag }}
+                {{ field }}
+                <div id="{{ field.name }}Error" class="text-danger"></div>
+            </div>
+        {% endfor %}
+        <button type="submit" id="submitBtn" disabled>Guardar Cambios</button>
+        <a href="{% url 'gestionarOrdenTrabjos' %}">Cancelar</a> <!-- Enlace para cancelar y volver a la lista -->
+    </form>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Inputs y contenedores de error
+        const inputs = {
+            fecha_inicio: document.querySelector('#id_fecha_inicio'),
+            fecha_entrega: document.querySelector('#id_fecha_entrega'),
+            observacion: document.querySelector('#id_observacion'),
+        };
+
+        const errors = {
+            fecha_inicio: document.querySelector('#fecha_inicioError'),
+            fecha_entrega: document.querySelector('#fecha_entregaError'),
+            observacion: document.querySelector('#observacionError'),
+        };
+
+        const submitBtn = document.querySelector('#submitBtn');
+
+        // Función para validar la fecha de inicio
+        function validarFechaInicio(fecha_inicio) {
+            return fecha_inicio !== '';
+        }
+
+        // Función para validar la fecha de entrega
+        function validarFechaEntrega(fecha_inicio, fecha_entrega) {
+            // Si la fecha de entrega es anterior a la fecha de inicio, es inválido
+            if (fecha_entrega !== '' && new Date(fecha_entrega) < new Date(fecha_inicio)) {
+                return false;
+            }
+            return true;
+        }
+
+        // Función para validar la observación
+        function validarObservacion(observacion) {
+            return observacion.length >= 10; // La observación debe tener al menos 10 caracteres
+        }
+
+        // Validación general
+        function validarFormulario() {
+            let isValid = true;
+
+            const fecha_inicio = inputs.fecha_inicio.value.trim();
+            const fecha_entrega = inputs.fecha_entrega.value.trim();
+            const observacion = inputs.observacion.value.trim();
+
+            // Validación de fecha de inicio
+            if (!validarFechaInicio(fecha_inicio)) {
+                errors.fecha_inicio.textContent = "La fecha de inicio es obligatoria.";
+                isValid = false;
+            } else {
+                errors.fecha_inicio.textContent = '';
+            }
+
+            // Validación de fecha de entrega
+            if (!validarFechaEntrega(fecha_inicio, fecha_entrega)) {
+                errors.fecha_entrega.textContent = "La fecha de entrega no puede ser anterior a la fecha de inicio.";
+                isValid = false;
+            } else {
+                errors.fecha_entrega.textContent = '';
+            }
+
+            // Validación de observación
+            if (!validarObservacion(observacion)) {
+                errors.observacion.textContent = "La observación debe tener al menos 10 caracteres.";
+                isValid = false;
+            } else {
+                errors.observacion.textContent = '';
+            }
+
+            submitBtn.disabled = !isValid;
+        }
+
+        // Agregar eventos de validación
+        Object.keys(inputs).forEach(key => {
+            inputs[key].addEventListener('input', validarFormulario);
+        });
+
+        // Validación inicial
+        validarFormulario();
+    });
+</script>
+

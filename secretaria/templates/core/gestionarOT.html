@@ -1,0 +1,165 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+<style>
+
+    /* Esconde las listas al inicio */
+    .collapsible-list {
+        margin: 0;
+        padding: 10px;
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        list-style-type: none;
+        transition: all 0.3s ease-in-out;
+    }
+
+    .collapsible-list li {
+        padding: 5px 0;
+    }
+
+    .d-none {
+        display: none;
+    }
+
+    .toggle-button {
+        background: none;
+        border: none;
+        color: #007bff;
+        cursor: pointer;
+        text-decoration: underline;
+        font-size: 14px;
+        padding: 0;
+    }
+
+    .toggle-button:hover {
+        color: #0056b3;
+    }
+</style>
+
+
+
+{% block content-crearCli %}
+
+
+    <div class="main-content">
+
+        <!-- Formulario de búsqueda -->
+        <h2>Gestionar OT</h2>
+        <form method="GET" action="{% url 'gestionarOrdenTrabjos' %}">
+            <div class="form-group">
+                <label for="patente">Ingrese la patente</label>
+                <input type="text" class="form-control" id="patente" name="patente" maxlength="10" placeholder="Ej: ABCD12" required>
+                <small id="patenteError" class="text-danger"></small>
+            </div>
+            <button type="submit" class="btn btn-primary" id="buscarBtn" disabled>Buscar</button>
+        </form>
+
+        <!-- Verificar si hay datos -->
+        {% if ordenes %}
+        <div id="tabla-resultados">
+            <h2>Resultados de la búsqueda</h2>
+            <table class="table table-striped" id="my-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Email</th>
+                        <th>Vehículo</th>
+                        <th>Cliente</th>
+                        <th>Estado</th>
+                        <th>Total</th>
+                        <th>Reparaciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for orden in ordenes %}
+                    <tr>
+                        <td>{{ orden.id }}</td>
+                        <td><a href="{% url 'email' orden.cliente.id %}">{{ orden.cliente.email }}</a></td>
+                        <td>{{ orden.vehiculo.patente }}</td>
+                        <td>{{ orden.cliente }}</td>
+                        <td>{{ orden.estado }}</td>
+                        <td>${{ orden.total_precio|floatformat:0 }}</td> <!-- Mostrar sin decimales -->
+                        <td>
+                            <ul>
+                                {% for reparacion in orden.reparacion.all %}
+                                <li>{{ reparacion.nombre }} - ${{ reparacion.precio|floatformat:0 }}</li> <!-- Mostrar sin decimales -->
+                                {% endfor %}
+                            </ul>
+                        </td>
+                        <td>
+                            <a href="{% url 'editarOt' orden.id %}" class="btn btn-sm btn-warning">Editar</a>
+                            <a href="{% url 'deleteOT' orden.id %}" class="btn btn-sm btn-danger" onclick="return confirmarEliminacion()">Eliminar</a>
+                        </td> 
+                    </tr> 
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p>No se encontraron vehículos con el estado 'Terminado'.</p>
+        {% endif %}
+
+    <!-- Paginación -->
+    <div class="pagination">
+        <ul class="pagination justify-content-center">
+            {% if ordenes.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1">Primera</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ ordenes.previous_page_number }}">Anterior</a>
+            </li>
+            {% endif %}
+
+            <li class="page-item disabled">
+                <a class="page-link">Página {{ ordenes.number }} de {{ ordenes.paginator.num_pages }}</a>
+            </li>
+
+            {% if ordenes.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ ordenes.next_page_number }}">Siguiente</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ ordenes.paginator.num_pages }}">Última</a>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+
+    </div>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const patenteInput = document.getElementById("patente");
+        const buscarBtn = document.getElementById("buscarBtn");
+        const patenteError = document.getElementById("patenteError");
+
+        // Validar patente chilena
+        function validarPatente(patente) {
+            const regex = /^[A-Z0-9]{6}$/; // Letras mayúsculas y números, exactamente 6 caracteres
+            return regex.test(patente);
+        }
+
+        // Validar en tiempo real
+        patenteInput.addEventListener("input", () => {
+            const patente = patenteInput.value.trim();
+            if (!validarPatente(patente)) {
+                patenteError.textContent = "La patente debe contener solo letras mayúsculas y números (6 caracteres).";
+                buscarBtn.disabled = true;
+            } else {
+                patenteError.textContent = "";
+                buscarBtn.disabled = false;
+            }
+        });
+
+        // Inicializar el botón como deshabilitado si el campo está vacío
+        buscarBtn.disabled = patenteInput.value.trim() === "";
+
+        // Confirmación para eliminación
+        function confirmarEliminacion() {
+            return confirm("¿Estás seguro de que deseas eliminar este OT?");
+        }
+    });
+    </script>
+{% endblock content-crearCli %}

@@ -1,0 +1,184 @@
+<style>
+    /* Estilos generales */
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f9;
+        margin-top: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    h2 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 20px;
+    }
+
+    .principal-content {
+        background: #ffffff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 400px;
+        
+    }
+
+    form {
+        display: flex;
+        flex-direction: column;
+    }
+
+    form p {
+        margin-bottom: 15px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #555;
+    }
+
+    input, select {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+    }
+
+    button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    button:hover {
+        background: #0056b3;
+    }
+
+    a {
+        text-align: center;
+        display: block;
+        margin-top: 10px;
+        color: #007bff;
+        text-decoration: none;
+    }
+
+    a:hover {
+        text-decoration: underline;
+    }
+</style>
+
+
+<div class="principal-content">
+    <h2>Editar Vehículo</h2>
+    <form method="POST">
+        {% csrf_token %}
+        {% for field in form %}
+            <div class="form-group">
+                {{ field.label_tag }}
+                {{ field }}
+                <div id="{{ field.name }}Error" class="text-danger"></div>
+            </div>
+        {% endfor %}
+        <button type="submit" id="submitBtn" disabled>Guardar Cambios</button>
+        <a href="{% url 'gestionarVehiculos' %}">Cancelar</a>
+    </form>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Inputs y contenedores de error
+        const inputs = {
+            patente: document.querySelector('#id_patente'),
+            modelo: document.querySelector('#id_modelo'),
+            año: document.querySelector('#id_año'),
+            marca: document.querySelector('#id_marca'),
+        };
+
+        const errors = {
+            patente: document.querySelector('#patenteError'),
+            modelo: document.querySelector('#modeloError'),
+            año: document.querySelector('#añoError'),
+            marca: document.querySelector('#marcaError'),
+        };
+
+        const submitBtn = document.querySelector('#submitBtn');
+
+        // Funciones de validación
+        function validarPatente(patente) {
+            const regex = /^[A-Z0-9]+$/; // Letras mayúsculas y números
+            return regex.test(patente);
+        }
+
+        function validarModelo(modelo) {
+            const regex = /^[a-zA-Z0-9\s]+$/; // Letras, números y espacios
+            return regex.test(modelo);
+        }
+
+        function validarAño(año) {
+            const minYear = 1900;
+            const maxYear = new Date().getFullYear();
+            return año >= minYear && año <= maxYear;
+        }
+
+        function validarMarca(marca) {
+            const regex = /^[a-zA-Z\s]+$/; // Solo letras y espacios
+            return regex.test(marca);
+        }
+
+        // Validación general
+        function validarFormulario() {
+            let isValid = true;
+
+            if (!validarPatente(inputs.patente.value.trim())) {
+                errors.patente.textContent = "La patente solo puede contener letras mayúsculas y números.";
+                isValid = false;
+            } else {
+                errors.patente.textContent = '';
+            }
+
+            if (!validarModelo(inputs.modelo.value.trim())) {
+                errors.modelo.textContent = "El modelo solo puede contener letras, números y espacios.";
+                isValid = false;
+            } else {
+                errors.modelo.textContent = '';
+            }
+
+            const año = parseInt(inputs.año.value.trim(), 10);
+            if (isNaN(año) || !validarAño(año)) {
+                errors.año.textContent = `El año debe estar entre 1900 y ${new Date().getFullYear()}.`;
+                isValid = false;
+            } else {
+                errors.año.textContent = '';
+            }
+
+            if (!validarMarca(inputs.marca.value.trim())) {
+                errors.marca.textContent = "La marca solo puede contener letras y espacios.";
+                isValid = false;
+            } else {
+                errors.marca.textContent = '';
+            }
+
+            submitBtn.disabled = !isValid;
+        }
+
+        // Agregar eventos de validación
+        Object.keys(inputs).forEach(key => {
+            inputs[key].addEventListener('input', validarFormulario);
+        });
+
+        // Validación inicial
+        validarFormulario();
+    });
+</script>

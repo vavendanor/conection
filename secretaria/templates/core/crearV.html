@@ -1,0 +1,170 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content-crearCli %}
+    <div class="main-content">
+        <h2>Registrar Vehículo</h2>
+
+        <!-- Mostrar mensajes -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="POST" action="{% url 'crearVehiculos' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="id_patente">Patente:</label>
+                <input type="text" id="id_patente" name="patente" class="form-control" placeholder="Ejemplo: AB1234 o BB22AA">
+                <small id="errorPatente" class="text-danger"></small>
+            </div>
+
+            <div class="form-group">
+                <label for="id_modelo">Modelo:</label>
+                <input type="text" id="id_modelo" name="modelo" class="form-control" placeholder="Ejemplo: Corolla">
+                <small id="errorModelo" class="text-danger"></small>
+            </div>
+
+            <div class="form-group">
+                <label for="id_marca">Marca:</label>
+                <input type="text" id="id_marca" name="marca" class="form-control" placeholder="Ejemplo: Toyota">
+                <small id="errorMarca" class="text-danger"></small>
+            </div>
+
+            <div class="form-group">
+                <label for="id_año">Año:</label>
+                <input type="number" id="id_año" name="año" class="form-control" placeholder="Ejemplo: 2020">
+                <small id="errorAño" class="text-danger"></small>
+            </div>
+
+            <div class="form-group">
+                <label for="rut_cliente">RUT del Cliente:</label>
+                <input type="text" id="rut_cliente" name="rut_cliente" class="form-control" placeholder="Ejemplo: 12345678-9">
+                <small id="errorRut" class="text-danger"></small>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="submitBtn" disabled>Enviar</button>
+        </form>
+    </div>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Elementos de entrada
+        const patenteInput = document.querySelector('#id_patente');
+        const modeloInput = document.querySelector('#id_modelo');
+        const marcaInput = document.querySelector('#id_marca');
+        const añoInput = document.querySelector('#id_año');
+        const rutInput = document.querySelector('#rut_cliente');
+        const submitBtn = document.querySelector('#submitBtn');
+
+        // Mensajes de error
+        const errorPatente = document.querySelector('#errorPatente');
+        const errorModelo = document.querySelector('#errorModelo');
+        const errorMarca = document.querySelector('#errorMarca');
+        const errorAño = document.querySelector('#errorAño');
+        const errorRut = document.querySelector('#errorRut');
+
+        // Validar formato del RUT
+        function validarFormatoRUT(rut) {
+            const regex = /^\d{7,8}-[0-9kK]$/;
+            return regex.test(rut);
+        }
+
+        // Validar dígito verificador del RUT
+        function validarDigitoVerificador(rut) {
+            const [numeros, dvIngresado] = rut.split('-');
+            const reverso = numeros.split('').reverse().map(Number);
+            const factores = [2, 3, 4, 5, 6, 7];
+            const suma = reverso.reduce((acc, num, idx) => acc + num * factores[idx % 6], 0);
+            const dvCalculado = 11 - (suma % 11);
+            const dv = dvCalculado === 11 ? '0' : dvCalculado === 10 ? 'k' : dvCalculado.toString();
+            return dv.toLowerCase() === dvIngresado.toLowerCase();
+        }
+
+        // Validar formato de patente
+        function validarPatente() {
+            const value = patenteInput.value.trim();
+            const regexAntiguo = /^[A-Z]{2}[0-9]{4}$/; // Formato antiguo: AB1234
+            const regexNuevo = /^[A-Z]{2}[0-9]{2}[A-Z]{2}$/; // Formato nuevo: BB22AA
+            if (!regexAntiguo.test(value) && !regexNuevo.test(value)) {
+                errorPatente.textContent = "La patente debe ser AB1234 o BB22AA.";
+                return false;
+            }
+            errorPatente.textContent = "";
+            return true;
+        }
+
+        // Validar modelo
+        function validarModelo() {
+            const value = modeloInput.value.trim();
+            if (value.length < 3) {
+                errorModelo.textContent = "El modelo debe tener al menos 3 caracteres.";
+                return false;
+            } else if (value.length > 20) {
+                errorModelo.textContent = "El modelo no puede tener más de 20 caracteres.";
+                return false;
+            }
+            errorModelo.textContent = "";
+            return true;
+        }
+
+        // Validar marca
+        function validarMarca() {
+            const value = marcaInput.value.trim();
+            if (value.length < 3) {
+                errorMarca.textContent = "La marca debe tener al menos 3 caracteres.";
+                return false;
+            } else if (value.length > 20) {
+                errorMarca.textContent = "La marca no puede tener más de 20 caracteres.";
+                return false;
+            }
+            errorMarca.textContent = "";
+            return true;
+        }
+
+        // Validar año
+        function validarAño() {
+            const value = parseInt(añoInput.value.trim());
+            const currentYear = new Date().getFullYear();
+            if (isNaN(value) || value < 1900 || value > currentYear) {
+                errorAño.textContent = `El año debe estar entre 1900 y ${currentYear}.`;
+                return false;
+            }
+            errorAño.textContent = "";
+            return true;
+        }
+
+        // Validaciones en tiempo real para el RUT
+        rutInput.addEventListener("input", function () {
+            const rut = rutInput.value.trim();
+            if (!validarFormatoRUT(rut)) {
+                errorRut.textContent = "El RUT ingresado no tiene un formato válido (Ejemplo: 12345678-9).";
+            } else if (!validarDigitoVerificador(rut)) {
+                errorRut.textContent = "El dígito verificador del RUT no es válido.";
+            } else {
+                errorRut.textContent = "";
+            }
+            validarFormulario();
+        });
+
+        // Validación del formulario completo
+        function validarFormulario() {
+            const esRutValido = validarFormatoRUT(rutInput.value.trim()) && validarDigitoVerificador(rutInput.value.trim());
+            const esPatenteValida = validarPatente();
+            const esModeloValido = validarModelo();
+            const esMarcaValida = validarMarca();
+            const esAñoValido = validarAño();
+
+            // Habilitar o deshabilitar el botón de envío
+            submitBtn.disabled = !(esRutValido && esPatenteValida && esModeloValido && esMarcaValida && esAñoValido);
+        }
+
+        // Eventos de validación en tiempo real
+        patenteInput.addEventListener("input", validarFormulario);
+        modeloInput.addEventListener("input", validarFormulario);
+        marcaInput.addEventListener("input", validarFormulario);
+        añoInput.addEventListener("input", validarFormulario);
+    });
+    </script>
+{% endblock %}

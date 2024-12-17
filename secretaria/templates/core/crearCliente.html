@@ -1,0 +1,180 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content-crearCli %}
+
+    <!-- index.html -->
+
+    <div class="main-content">
+      <h2>Crear cliente</h2>
+      <form action="{% url 'crearCliente' %}" method="POST">
+          {% csrf_token %}
+          {% for field in form %}
+              <div class="form-group">
+                  {{ field.label_tag }}
+                  {{ field }}
+                  {% if field.name == 'rut' %}
+                  <div id="rutError" class="text-danger"></div>
+                  {% elif field.name == 'nombres' %}
+                    <div id="nombresError" class="text-danger"></div>
+                  {% elif field.name == 'apellidos' %}
+                    <div id="apellidosError" class="text-danger"></div>
+                  {% elif field.name == 'telefono' %}
+                    <div id="telefonoError" class="text-danger"></div>
+
+                    {% elif field.name == 'email' %}
+                    <div id="emailError" class="text-danger"></div>
+                  {% elif field.name == 'direccion' %}
+                    <div id="direccionError" class="text-danger"></div>
+
+              {% endif %}
+          </div>
+      {% endfor %}
+      <button type="submit" class="btn btn-primary" id="submitBtn" disabled>Enviar</button>
+      </form>
+      {% if messages %}
+          <ul class="list-group">
+            {% for message in messages %}
+              <li class="list-group-item list-group-item-{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+          </ul>
+      {% endif %}
+    </div>
+
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+          const rutInput = document.querySelector('#id_rut'); // Selector del campo de RUT
+          const nombresInput = document.querySelector('#id_nombres'); // Selector del campo de Nombres
+          const apellidosInput = document.querySelector('#id_apellidos'); // Selector del campo de Apellidos
+          const telefonoInput = document.querySelector('#id_telefono');
+          const direccionInput = document.querySelector('#id_direccion');
+
+
+          const rutError = document.querySelector('#rutError'); // Elemento para mostrar el error
+          const nombresError = document.querySelector('#nombresError'); // Elemento para mostrar el error
+          const apellidosError = document.querySelector('#apellidosError'); // Elemento para mostrar el error
+          const telefonoError = document.querySelector('#telefonoError');
+          const direccionError = document.querySelector('#direccionError');
+
+          const submitBtn = document.querySelector('#submitBtn'); // Botón de enviar
+          
+
+          function validarFormulario() {
+            // Valida si todos los campos son válidos antes de habilitar el botón
+            const rutValido = validarFormatoRUT(rutInput.value.trim()) && validarDigitoVerificador(rutInput.value.trim()) && !numerosIguales(rutInput.value.trim());
+            const nombresValidos = validarNombres(nombresInput.value.trim());
+            const apellidosValidos = validarNombres(apellidosInput.value.trim());
+            const telefonoValido = validarTelefono(telefonoInput.value.trim());
+            const direccionValida = validarDireccion(direccionInput.value.trim());
+
+            if (rutValido && nombresValidos && apellidosValidos && telefonoValido && direccionValida) {
+                submitBtn.disabled = false;
+            } else {
+                submitBtn.disabled = true;
+            }
+         }
+
+        // Validación en tiempo real del RUT
+        rutInput.addEventListener('input', function () {
+            const rut = rutInput.value.trim();
+            if (!validarFormatoRUT(rut)) {
+                rutError.textContent = 'El RUT ingresado no tiene un formato válido.';
+            } else if (!validarDigitoVerificador(rut)) {
+                rutError.textContent = 'El dígito verificador del RUT no es válido.';
+            } else if (numerosIguales(rut)) {
+                rutError.textContent = 'El RUT no puede tener todos los números iguales.';
+            } else {
+                rutError.textContent = ''; // Limpia el mensaje de error
+            }
+            validarFormulario();
+        });
+
+        // Validación en tiempo real de Nombres y Apellidos
+        nombresInput.addEventListener('input', function () {
+            const nombres = nombresInput.value.trim();
+            if (validarNombres(nombres)) {
+                nombresError.textContent = ''; // Limpia el mensaje de error
+            } else {
+                nombresError.textContent = 'El nombre solo puede contener letras y espacios, y debe tener al menos 2 caracteres.';
+            }
+            validarFormulario();
+        });
+
+        
+        apellidosInput.addEventListener('input', function () {
+            const apellidos = apellidosInput.value.trim();
+            if (validarNombres(apellidos)) {
+                apellidosError.textContent = ''; // Limpia el mensaje de error
+            } else {
+                apellidosError.textContent = 'El apellido solo puede contener letras y espacios, y debe tener al menos 2 caracteres.';
+            }
+            validarFormulario();
+        });
+
+        // Validación en tiempo real del teléfono
+        telefonoInput.addEventListener('input', function () {
+            const telefono = telefonoInput.value.trim();
+            if (validarTelefono(telefono)) {
+                telefonoError.textContent = '';
+            } else {
+                telefonoError.textContent = 'El teléfono debe comenzar con un 9 y tener 9 dígitos.';
+            }
+            validarFormulario();
+        });
+
+        direccionInput.addEventListener('input', function () {
+            const direccion = direccionInput.value.trim();
+            if (validarDireccion(direccion)) {
+                direccionError.textContent = '';
+            } else {
+                direccionError.textContent = 'La dirección debe ser real y tener al menos 6 caracteres.';
+            }
+            validarFormulario();
+        });
+
+        // Función para validar el formato de la dirección
+        function validarDireccion(direccion) {
+            const regex = /^[a-zA-Z0-9\s,.\-]{6,}$/;
+            return regex.test(direccion);
+        }
+
+        // Función para validar el formato del teléfono
+        function validarTelefono(telefono) {
+            const regex = /^9\d{8}$/; // Valida que empiece con 9 y tenga 9 dígitos
+            return regex.test(telefono);
+        }
+
+          // Función para validar el formato de nombres y apellidos
+        function validarNombres(texto) {
+            const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,}$/;
+            return regex.test(texto); // Verifica que cumpla con las reglas
+        }
+
+            // Nueva función para verificar si todos los dígitos son iguales
+          function numerosIguales(rut) {
+              const [numeros] = rut.split('-');
+              return new Set(numeros).size === 1; // Si todos los números son iguales, el tamaño del conjunto es 1
+          }
+  
+           // Función para validar el formato del RUT
+          function validarFormatoRUT(rut) {
+              const regex = /^\d{7,8}-[0-9kK]$/;
+              return regex.test(rut); // Verifica el formato
+          }
+  
+          // Función para validar el dígito verificador del RUT
+          function validarDigitoVerificador(rut) {
+              const [numeros, dvIngresado] = rut.split('-');
+              const reverso = numeros.split('').reverse().map(Number);
+              const factores = [2, 3, 4, 5, 6, 7];
+              const suma = reverso.reduce((acc, num, idx) => acc + num * factores[idx % 6], 0);
+              const dvCalculado = 11 - (suma % 11);
+              const dv = dvCalculado === 11 ? '0' : dvCalculado === 10 ? 'k' : dvCalculado.toString();
+              return dv.toLowerCase() === dvIngresado.toLowerCase();
+          }
+      });
+  </script>  
+        
+
+{% endblock content-crearCli %}
